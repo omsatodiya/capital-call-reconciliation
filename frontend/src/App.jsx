@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 import LineItemPanel from "./components/LineItemPanel";
+import UploadForm from "./components/UploadForm";
 import "./App.css";
 
 const APP_NAME = "Callwise";
@@ -71,7 +72,10 @@ export default function App() {
       </header>
 
       {error && <div className="error">{error}</div>}
-
+      <section>
+        <h2>Import bank statement</h2>
+        <UploadForm key={org} org={org} onImported={loadData} />
+      </section>
       <section>
         <h2>Capital call line items</h2>
         {loading && lineItems.length === 0 ? (
