@@ -97,3 +97,40 @@ class LineItem(models.Model):
 
     def __str__(self):
         return f"{self.expected_reference} - {self.investor.name}"
+
+class BankTransaction(models.Model):
+    class Status(models.TextChoices):
+        SUGGESTED = "suggested"
+        NEEDS_REVIEW = "needs_review"
+        RECONCILED = "reconciled"
+        IGNORED = "ignored"
+
+    organization = models.ForeignKey(
+        Organization, on_delete=models.PROTECT, related_name="transactions"
+    )
+    date = models.DateField()
+    description = models.TextField()
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    bank_reference = models.CharField(max_length=100)
+    status = models.CharField(max_length=20, choices=Status.choices)
+    review_reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "bank_reference"],
+                name="unique_bank_reference_per_org",
+            ),
+            models.CheckConstraint(
+                condition=~Q(amount=0), name="transaction_amount_not_zero"
+            ),
+        ]
+
+    @property
+    def is_credit(self):
+        return self.amount > 0
+
+    def __str__(self):
+        return f"{self.bank_reference} {self.amount}"
