@@ -5,7 +5,7 @@ import TransactionTable from "./components/TransactionTable";
 import UploadForm from "./components/UploadForm";
 import "./App.css";
 
-const APP_NAME = "Your App Name";
+const APP_NAME = "Callwise";
 
 export default function App() {
   const [organizations, setOrganizations] = useState([]);
@@ -88,9 +88,10 @@ export default function App() {
     <div className="page">
       <header className="header">
         <h1>{APP_NAME}</h1>
-        <label>
-          Organization{" "}
+        <label className="org-picker">
+          Organization
           <select
+            className="select"
             value={org}
             onChange={(event) => changeOrganization(event.target.value)}
           >

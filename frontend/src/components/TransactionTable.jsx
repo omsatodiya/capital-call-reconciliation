@@ -76,6 +76,7 @@ export default function TransactionTable({
                 {proposed.map((match) => (
                   <div key={match.id}>
                     <button
+                      className="btn btn-primary"
                       disabled={busy}
                       onClick={() => onApprove(transaction, match)}
                     >
@@ -85,6 +86,7 @@ export default function TransactionTable({
                         : ""}
                     </button>
                     <button
+                      className="btn btn-secondary"
                       disabled={busy}
                       onClick={() => onReject(transaction, match)}
                     >
@@ -93,7 +95,11 @@ export default function TransactionTable({
                   </div>
                 ))}
                 {canIgnore && (
-                  <button disabled={busy} onClick={() => onIgnore(transaction)}>
+                  <button
+                    className="btn btn-ghost"
+                    disabled={busy}
+                    onClick={() => onIgnore(transaction)}
+                  >
                     Ignore
                   </button>
                 )}

@@ -28,12 +28,17 @@ export default function UploadForm({ org, onImported }) {
     <div>
       <form onSubmit={handleSubmit} className="upload">
         <input
+          className="file-input"
           type="file"
           accept=".csv,text/csv"
           onChange={(event) => setFile(event.target.files[0] ?? null)}
         />
-        <button type="submit" disabled={!file || uploading}>
-          {uploading ? "Uploading…" : "Upload"}
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={!file || uploading}
+        >
+          Upload
         </button>
       </form>
 
