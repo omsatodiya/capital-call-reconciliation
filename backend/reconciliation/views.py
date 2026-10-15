@@ -11,6 +11,11 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.exceptions import NotFound
+
+from .services.actions import ActionConflict, approve_match, ignore_transaction, reject_match
+
 from .mixins import OrganizationScopedMixin
 from .models import LineItem
 from .serializers import LineItemSerializer
@@ -51,3 +56,27 @@ class TransactionListView(OrganizationScopedMixin, ListAPIView):
         return BankTransaction.objects.filter(
             organization=self.organization
         ).prefetch_related(Prefetch("matches", queryset=matches))
+
+def run_action(action, organization, object_id):
+    try:
+        bank_transaction = action(organization, object_id)
+    except ObjectDoesNotExist:
+        raise NotFound()
+    except ActionConflict as error:
+        return Response({"detail": str(error)}, status=status.HTTP_409_CONFLICT)
+    return Response(BankTransactionSerializer(bank_transaction).data)
+
+
+class ApproveMatchView(OrganizationScopedMixin, APIView):
+    def post(self, request, pk):
+        return run_action(approve_match, self.organization, pk)
+
+
+class RejectMatchView(OrganizationScopedMixin, APIView):
+    def post(self, request, pk):
+        return run_action(reject_match, self.organization, pk)
+
+
+class IgnoreTransactionView(OrganizationScopedMixin, APIView):
+    def post(self, request, pk):
+        return run_action(ignore_transaction, self.organization, pk)
