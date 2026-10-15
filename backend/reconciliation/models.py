@@ -134,3 +134,38 @@ class BankTransaction(models.Model):
 
     def __str__(self):
         return f"{self.bank_reference} {self.amount}"
+
+class Match(models.Model):
+    class Status(models.TextChoices):
+        PROPOSED = "proposed"
+        APPROVED = "approved"
+        REJECTED = "rejected"
+
+    bank_transaction = models.ForeignKey(
+        BankTransaction, on_delete=models.PROTECT, related_name="matches"
+    )
+    line_item = models.ForeignKey(
+        LineItem, on_delete=models.PROTECT, related_name="matches"
+    )
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PROPOSED
+    )
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["bank_transaction", "line_item"],
+                name="unique_match_per_transaction_and_line_item",
+            ),
+            models.UniqueConstraint(
+                fields=["bank_transaction"],
+                condition=Q(status="approved"),
+                name="one_approved_match_per_transaction",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.bank_transaction} -> {self.line_item}"
