@@ -1,8 +1,9 @@
 from rest_framework.generics import ListAPIView
 
 from .mixins import OrganizationScopedMixin
-from .models import LineItem
-from .serializers import LineItemSerializer
+from django.db.models import Prefetch
+from .models import BankTransaction, LineItem, Match
+from .serializers import BankTransactionSerializer, LineItemSerializer
 
 from rest_framework import status
 from rest_framework.generics import ListAPIView
@@ -41,3 +42,12 @@ class BankStatementImportView(OrganizationScopedMixin, APIView):
             return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(summary, status=status.HTTP_201_CREATED)
+
+class TransactionListView(OrganizationScopedMixin, ListAPIView):
+    serializer_class = BankTransactionSerializer
+
+    def get_queryset(self):
+        matches = Match.objects.select_related("line_item__investor")
+        return BankTransaction.objects.filter(
+            organization=self.organization
+        ).prefetch_related(Prefetch("matches", queryset=matches))
