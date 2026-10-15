@@ -13,4 +13,5 @@ urlpatterns = [
     ),
     path("matches/<int:pk>/approve/", views.ApproveMatchView.as_view(), name="match-approve"),
     path("matches/<int:pk>/reject/", views.RejectMatchView.as_view(), name="match-reject"),
+    path("organizations/", views.OrganizationListView.as_view(), name="organization-list"),
 ]

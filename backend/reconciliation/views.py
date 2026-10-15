@@ -17,8 +17,8 @@ from rest_framework.exceptions import NotFound
 from .services.actions import ActionConflict, approve_match, ignore_transaction, reject_match
 
 from .mixins import OrganizationScopedMixin
-from .models import LineItem
-from .serializers import LineItemSerializer
+from .models import LineItem, Organization
+from .serializers import LineItemSerializer, OrganizationSerializer
 from .services.imports import ImportFileError, import_bank_statement
 
 
@@ -80,3 +80,7 @@ class RejectMatchView(OrganizationScopedMixin, APIView):
 class IgnoreTransactionView(OrganizationScopedMixin, APIView):
     def post(self, request, pk):
         return run_action(ignore_transaction, self.organization, pk)
+
+class OrganizationListView(ListAPIView):
+    queryset = Organization.objects.order_by("name")
+    serializer_class = OrganizationSerializer

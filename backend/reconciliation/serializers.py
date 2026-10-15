@@ -1,7 +1,6 @@
 from rest_framework import serializers
-from .models import BankTransaction, LineItem, Match
+from .models import BankTransaction, LineItem, Match, Organization
 from .models import LineItem
-
 
 class LineItemSerializer(serializers.ModelSerializer):
     investor_name = serializers.CharField(source="investor.name", read_only=True)
@@ -53,3 +52,8 @@ class BankTransactionSerializer(serializers.ModelSerializer):
             "review_reason",
             "matches",
         ]
+
+class OrganizationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ["slug", "name"]
