@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 import LineItemPanel from "./components/LineItemPanel";
+import TransactionTable from "./components/TransactionTable";
 import UploadForm from "./components/UploadForm";
 import "./App.css";
 
-const APP_NAME = "Callwise";
+const APP_NAME = "Your App Name";
 
 export default function App() {
   const [organizations, setOrganizations] = useState([]);
   const [org, setOrg] = useState("");
+  const [transactions, setTransactions] = useState([]);
   const [lineItems, setLineItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [busyId, setBusyId] = useState(null);
 
   useEffect(() => {
     api
@@ -34,7 +37,12 @@ export default function App() {
     if (!org) return;
     setLoading(true);
     try {
-      setLineItems(await api.listLineItems(org));
+      const [transactionList, lineItemList] = await Promise.all([
+        api.listTransactions(org),
+        api.listLineItems(org),
+      ]);
+      setTransactions(transactionList);
+      setLineItems(lineItemList);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -48,9 +56,33 @@ export default function App() {
 
   function changeOrganization(slug) {
     setError("");
+    setTransactions([]);
     setLineItems([]);
     setOrg(slug);
   }
+
+  async function runAction(transactionId, action) {
+    setBusyId(transactionId);
+    setError("");
+    try {
+      await action();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      await loadData();
+      setBusyId(null);
+    }
+  }
+
+  const approve = (transaction, match) =>
+    runAction(transaction.id, () => api.approveMatch(org, match.id));
+  const reject = (transaction, match) =>
+    runAction(transaction.id, () => api.rejectMatch(org, match.id));
+  const ignore = (transaction) =>
+    runAction(transaction.id, () => api.ignoreTransaction(org, transaction.id));
+
+  const firstLoad =
+    loading && transactions.length === 0 && lineItems.length === 0;
 
   return (
     <div className="page">
@@ -72,18 +104,44 @@ export default function App() {
       </header>
 
       {error && <div className="error">{error}</div>}
-      <section>
-        <h2>Import bank statement</h2>
-        <UploadForm key={org} org={org} onImported={loadData} />
-      </section>
-      <section>
-        <h2>Capital call line items</h2>
-        {loading && lineItems.length === 0 ? (
-          <p className="muted">Loading…</p>
-        ) : (
-          <LineItemPanel lineItems={lineItems} />
-        )}
-      </section>
+
+      {org && (
+        <>
+          <section>
+            <h2>Import bank statement</h2>
+            <UploadForm key={org} org={org} onImported={loadData} />
+          </section>
+
+          <section>
+            <h2>
+              Transactions{" "}
+              {loading && !firstLoad && (
+                <span className="muted">Refreshing…</span>
+              )}
+            </h2>
+            {firstLoad ? (
+              <p className="muted">Loading…</p>
+            ) : (
+              <TransactionTable
+                transactions={transactions}
+                busyId={busyId}
+                onApprove={approve}
+                onReject={reject}
+                onIgnore={ignore}
+              />
+            )}
+          </section>
+
+          <section>
+            <h2>Capital call line items</h2>
+            {firstLoad ? (
+              <p className="muted">Loading…</p>
+            ) : (
+              <LineItemPanel lineItems={lineItems} />
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }
